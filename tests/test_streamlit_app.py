@@ -30,6 +30,20 @@ class StreamlitInteractionTests(unittest.TestCase):
         self.assertFalse(self.app.exception)
         self.assertEqual(1, len(self.app.success))
 
+    def test_advanced_answer_uses_batched_multiline_input(self) -> None:
+        self.app.selectbox[0].set_value("결측치").run()
+        self.app.selectbox[1].set_value("고급").run()
+        self.assertFalse(self.app.exception)
+        self.assertEqual(1, len(self.app.text_area))
+        self.app.text_area[0].set_value(
+            'df["age"] = df["age"].fillna(df["age"].median())\n'
+            'df["city"] = df["city"].fillna(df["city"].mode()[0])\n'
+            "df = df.dropna()"
+        )
+        self.app.button[0].click().run()
+        self.assertFalse(self.app.exception)
+        self.assertEqual(1, len(self.app.success))
+
 
 if __name__ == "__main__":
     unittest.main()

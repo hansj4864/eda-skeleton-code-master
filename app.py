@@ -8,10 +8,13 @@ import streamlit as st
 from grading import GradeResult, grade_submission
 from questions import QUESTION_BY_ID, QUESTIONS, Question
 
-try:
-    from streamlit_ace import st_ace
-except ImportError:  # The app remains usable if the optional component fails to load.
-    st_ace = None
+
+QUESTION_IDS = tuple(question.id for question in QUESTIONS)
+QUESTION_NUMBER_BY_ID = {
+    question_id: number for number, question_id in enumerate(QUESTION_IDS, start=1)
+}
+TOPICS = ("전체", *dict.fromkeys(question.topic for question in QUESTIONS))
+DIFFICULTIES = ("전체", "초급", "중급", "고급")
 
 
 st.set_page_config(
@@ -89,10 +92,12 @@ st.markdown(
 
 def _initialize_state() -> None:
     if "progress" not in st.session_state:
-        st.session_state.progress = {
-            question.id: {"attempts": 0, "passed": False, "result": None}
-            for question in QUESTIONS
-        }
+        st.session_state.progress = {}
+    for question_id in QUESTION_IDS:
+        st.session_state.progress.setdefault(
+            question_id,
+            {"attempts": 0, "passed": False, "result": None},
+        )
     if "correct_submissions" not in st.session_state:
         st.session_state.correct_submissions = 0
 
@@ -109,8 +114,7 @@ def _clear_answer(question: Question) -> None:
 
 
 def _go_next(current_id: str) -> None:
-    ids = [question.id for question in QUESTIONS]
-    next_id = ids[(ids.index(current_id) + 1) % len(ids)]
+    next_id = QUESTION_IDS[(QUESTION_IDS.index(current_id) + 1) % len(QUESTION_IDS)]
     st.session_state.topic_filter = "전체"
     st.session_state.difficulty_filter = "전체"
     st.session_state.question_selector = next_id
@@ -127,7 +131,7 @@ def _record_submission(question: Question, result: GradeResult) -> None:
 
 def _format_question(question_id: str) -> str:
     question = QUESTION_BY_ID[question_id]
-    number = [item.id for item in QUESTIONS].index(question_id) + 1
+    number = QUESTION_NUMBER_BY_ID[question_id]
     return f"{number:02d}. {question.title}"
 
 
@@ -146,10 +150,8 @@ def _render_sidebar() -> Question:
         metric_right.metric("정답률", f"{accuracy:.0f}%")
         st.markdown("---")
 
-        topics = ["전체", *dict.fromkeys(question.topic for question in QUESTIONS)]
-        difficulties = ["전체", "초급", "중급", "고급"]
-        topic = st.selectbox("학습 주제", topics, key="topic_filter")
-        difficulty = st.selectbox("난이도", difficulties, key="difficulty_filter")
+        topic = st.selectbox("학습 주제", TOPICS, key="topic_filter")
+        difficulty = st.selectbox("난이도", DIFFICULTIES, key="difficulty_filter")
 
         filtered = [
             question
@@ -184,7 +186,7 @@ def _render_data_preview(question: Question) -> None:
     df = question.data_factory().copy(deep=True)
     preview_rows = int(question.preview_config.get("rows", 8))
     st.markdown("#### 초기 데이터")
-    st.dataframe(df.head(preview_rows), width="stretch", hide_index=True)
+    st.table(df.head(preview_rows).reset_index(drop=True))
 
     rows, columns, missing = st.columns(3)
     rows.metric("행", f"{df.shape[0]}")
@@ -199,7 +201,7 @@ def _render_data_preview(question: Question) -> None:
                 "고유값": df.nunique(dropna=True),
             }
         )
-        st.dataframe(schema, width="stretch")
+        st.table(schema)
 
 
 def _render_answer_input(question: Question) -> int | str | None:
@@ -228,21 +230,6 @@ def _render_answer_input(question: Question) -> int | str | None:
             label_visibility="collapsed",
         )
 
-    if st_ace is not None:
-        return st_ace(
-            value="",
-            language="python",
-            theme="tomorrow_night_blue",
-            key=key,
-            height=180,
-            font_size=14,
-            tab_size=4,
-            show_gutter=True,
-            wrap=True,
-            auto_update=True,
-            placeholder=question.blank_prompt,
-        )
-    st.warning("코드 에디터를 불러오지 못해 기본 입력창으로 전환했습니다.")
     return st.text_area(
         "여러 줄 답안",
         key=key,
@@ -288,7 +275,7 @@ def _render_result(question: Question, result: GradeResult) -> None:
 
 _initialize_state()
 selected_question = _render_sidebar()
-question_number = [question.id for question in QUESTIONS].index(selected_question.id) + 1
+question_number = QUESTION_NUMBER_BY_ID[selected_question.id]
 
 st.markdown(
     """
@@ -318,8 +305,11 @@ with left:
     _render_data_preview(selected_question)
 
 with right:
-    answer = _render_answer_input(selected_question)
-    if st.button("답안 제출", type="primary", width="stretch"):
+    with st.form(f"answer_form_{selected_question.id}", border=False):
+        answer = _render_answer_input(selected_question)
+        submitted = st.form_submit_button("답안 제출", type="primary", width="stretch")
+
+    if submitted:
         result = grade_submission(selected_question, answer)
         _record_submission(selected_question, result)
 
