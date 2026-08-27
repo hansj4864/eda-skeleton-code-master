@@ -10,8 +10,9 @@ from typing import Any, Callable
 import numpy as np
 import pandas as pd
 
+from question_bank import EXTRA_VALIDATORS
+from question_models import Question
 from questions import (
-    Question,
     iqr_advanced_data,
     iqr_medium_data,
     missing_advanced_data,
@@ -231,6 +232,7 @@ VALIDATORS: dict[str, Callable[[], pd.DataFrame]] = {
     "iqr_advanced": _expected_iqr_advanced,
     "filter_medium": _expected_filter_medium,
     "summary_advanced": _expected_summary_advanced,
+    **EXTRA_VALIDATORS,
 }
 
 

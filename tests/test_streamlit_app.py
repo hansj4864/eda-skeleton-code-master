@@ -18,7 +18,7 @@ class StreamlitInteractionTests(unittest.TestCase):
         self.assertFalse(self.app.exception)
         self.assertEqual(1, len(self.app.success))
         self.assertGreaterEqual(len(self.app.code), 1)
-        self.assertGreaterEqual(len(self.app.info), 1)
+        self.assertGreaterEqual(len(self.app.expander), 1)
 
     def test_medium_code_submission_and_filtering(self) -> None:
         self.app.selectbox[0].set_value("결측치").run()

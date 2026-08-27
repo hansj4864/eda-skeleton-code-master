@@ -2,35 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Callable, Literal
-
 import pandas as pd
 
-
-Difficulty = Literal["초급", "중급", "고급"]
-QuestionKind = Literal["mcq", "code_blank"]
-
-
-@dataclass(frozen=True)
-class Question:
-    id: str
-    title: str
-    topic: str
-    difficulty: Difficulty
-    kind: QuestionKind
-    prompt: str
-    data_factory: Callable[[], pd.DataFrame]
-    preview_config: dict[str, Any] = field(default_factory=lambda: {"rows": 8})
-    immutable_template: str = ""
-    blank_prompt: str = ""
-    choices: tuple[str, ...] = ()
-    correct_choice: int | None = None
-    validator_id: str | None = None
-    allowed_methods: frozenset[str] = frozenset()
-    hint: str = ""
-    solution: str = ""
-    explanation: str = ""
+from question_models import Difficulty, Question, QuestionKind
 
 
 def missing_basic_data() -> pd.DataFrame:
@@ -99,7 +73,7 @@ def chart_data() -> pd.DataFrame:
     )
 
 
-QUESTIONS: tuple[Question, ...] = (
+BASE_QUESTIONS: tuple[Question, ...] = (
     Question(
         id="missing_beginner",
         title="결측치 개수 확인하기",
@@ -313,5 +287,8 @@ QUESTIONS: tuple[Question, ...] = (
 )
 
 
-QUESTION_BY_ID = {question.id: question for question in QUESTIONS}
+from question_bank import EXTRA_QUESTIONS  # noqa: E402  (loaded after shared factories)
 
+
+QUESTIONS = BASE_QUESTIONS + EXTRA_QUESTIONS
+QUESTION_BY_ID = {question.id: question for question in QUESTIONS}

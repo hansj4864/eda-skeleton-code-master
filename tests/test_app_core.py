@@ -11,12 +11,16 @@ from questions import QUESTION_BY_ID, QUESTIONS
 
 class QuestionCatalogueTests(unittest.TestCase):
     def test_catalogue_has_expected_mix(self) -> None:
-        self.assertEqual(12, len(QUESTIONS))
-        self.assertEqual(12, len({question.id for question in QUESTIONS}))
-        self.assertEqual(9, sum(question.topic != "시각화" for question in QUESTIONS))
-        self.assertEqual(3, sum(question.topic == "시각화" for question in QUESTIONS))
-        self.assertEqual(6, sum(question.kind == "mcq" for question in QUESTIONS))
-        self.assertEqual(6, sum(question.kind == "code_blank" for question in QUESTIONS))
+        self.assertEqual(60, len(QUESTIONS))
+        self.assertEqual(60, len({question.id for question in QUESTIONS}))
+        self.assertEqual(45, sum(question.topic != "시각화" for question in QUESTIONS))
+        self.assertEqual(15, sum(question.topic == "시각화" for question in QUESTIONS))
+        self.assertEqual(30, sum(question.kind == "mcq" for question in QUESTIONS))
+        self.assertEqual(30, sum(question.kind == "code_blank" for question in QUESTIONS))
+        for topic in ("결측치", "이상치·IQR", "필터링·요약", "시각화"):
+            self.assertEqual(15, sum(question.topic == topic for question in QUESTIONS))
+        for difficulty in ("초급", "중급", "고급"):
+            self.assertEqual(20, sum(question.difficulty == difficulty for question in QUESTIONS))
 
     def test_every_question_has_learning_feedback(self) -> None:
         for question in QUESTIONS:
@@ -115,4 +119,3 @@ class GradingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

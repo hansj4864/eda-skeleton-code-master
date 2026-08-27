@@ -66,6 +66,8 @@ st.markdown(
         border-left: 3px solid #8aa7d9; background: #f1f5fb; padding: .72rem .9rem;
         border-radius: 0 10px 10px 0; color: #41516e; margin: .6rem 0 1rem;
     }
+    div[data-testid="stExpander"] details { scroll-margin-top: 1rem; }
+    div[data-testid="stVerticalBlockBorderWrapper"] { scroll-margin-top: 1rem; }
     div[data-testid="stMetric"] {
         background: white; border: 1px solid var(--line); padding: .85rem 1rem;
         border-radius: 14px; box-shadow: 0 5px 18px rgba(30,58,100,.04);
@@ -252,36 +254,36 @@ def _render_answer_input(question: Question) -> int | str | None:
 
 def _render_result(question: Question, result: GradeResult) -> None:
     st.markdown("---")
-    st.markdown("#### 채점 결과")
-    if result.passed:
-        st.success(result.summary, icon="✅")
-    else:
-        st.error(result.summary, icon="🧩")
-    if result.error_type:
-        st.caption(f"분류: {result.error_type}")
-    if result.feedback:
-        with st.container(border=True):
+    with st.container(border=True):
+        st.markdown("#### 채점 결과")
+        if result.passed:
+            st.success(result.summary, icon="✅")
+        else:
+            st.error(result.summary, icon="🧩")
+        if result.error_type:
+            st.caption(f"분류: {result.error_type}")
+        if result.feedback:
             st.write(result.feedback)
 
-    st.markdown("##### 모범 코드")
-    st.code(question.solution, language="python")
-    st.markdown("##### 핵심 해설")
-    st.info(question.explanation, icon="💡")
+        st.markdown("##### 모범 코드")
+        st.code(question.solution, language="python")
+        with st.expander("상세 해설 펼치기", expanded=False, icon="💡"):
+            st.write(question.explanation)
 
-    retry, next_question = st.columns(2)
-    retry.button(
-        "다시 풀기",
-        width="stretch",
-        on_click=_clear_answer,
-        args=(question,),
-    )
-    next_question.button(
-        "다음 문제 →",
-        type="primary",
-        width="stretch",
-        on_click=_go_next,
-        args=(question.id,),
-    )
+        retry, next_question = st.columns(2)
+        retry.button(
+            "다시 풀기",
+            width="stretch",
+            on_click=_clear_answer,
+            args=(question,),
+        )
+        next_question.button(
+            "다음 문제 →",
+            type="primary",
+            width="stretch",
+            on_click=_go_next,
+            args=(question.id,),
+        )
 
 
 _initialize_state()
@@ -293,7 +295,7 @@ st.markdown(
     <section class="hero">
         <div class="hero-kicker">MONTH-END EDA PRACTICE</div>
         <h1>코드를 외우지 말고,<br>패턴을 익히세요.</h1>
-        <p>작은 데이터로 직접 판단하고 작성한 뒤, 즉시 채점과 해설로 빈틈을 메우는 12문제 실전 코스입니다.</p>
+        <p>작은 데이터로 직접 판단하고 작성한 뒤, 즉시 채점과 해설로 빈틈을 메우는 60문제 실전 코스입니다.</p>
     </section>
     """,
     unsafe_allow_html=True,
@@ -320,7 +322,6 @@ with right:
     if st.button("답안 제출", type="primary", width="stretch"):
         result = grade_submission(selected_question, answer)
         _record_submission(selected_question, result)
-        st.rerun()
 
     stored_result = st.session_state.progress[selected_question.id]["result"]
     if isinstance(stored_result, GradeResult):
